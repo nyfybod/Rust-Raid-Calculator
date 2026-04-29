@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rust Raid Helper - Ultimate</title>
+    <style>
+        :root {
+            --bg-deep: #0f0c29; 
+            --card-bg: rgba(20, 15, 35, 0.9);
+            --accent: #b794ff; 
+            --text: #f0f0f0;
+            --sulfur: #f1c40f;
+            --mouse-wind: 0px;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(to bottom, rgba(15, 12, 41, 0.7), rgba(36, 36, 62, 0.7)), url('wallpaper/wallpaper.png');
+            background-size: cover; background-position: center; background-attachment: fixed;
+            color: var(--text); margin: 0; padding: 20px; min-height: 100vh; display: flex; justify-content: center; overflow-x: hidden;
+        }
+
+        .ripple { position: absolute; border-radius: 50%; background: rgba(183, 148, 255, 0.4); transform: scale(0); animation: ripple-animation 0.6s linear; pointer-events: none; }
+        @keyframes ripple-animation { to { transform: scale(4); opacity: 0; } }
+
+        #snow-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none; }
+        .snow-particle { position: absolute; background-color: #fff; border-radius: 50%; filter: blur(1px); opacity: 0.4; animation: fall linear forwards; }
+        @keyframes fall { from { transform: translateY(-10px) translateX(0); } to { transform: translateY(110vh) translateX(var(--mouse-wind)); } }
+
+        .container { max-width: 1000px; width: 100%; position: relative; z-index: 10; }
+        h1 { text-align: center; letter-spacing: 5px; color: var(--accent); text-transform: uppercase; margin-bottom: 30px; text-shadow: 0 0 15px rgba(183,148,255,0.4); }
+
+        .main-layout { display: flex; gap: 20px; align-items: flex-start; }
+        .left-col { flex: 1.8; }
+        .right-col { flex: 1.2; position: sticky; top: 20px; }
+
+        .section { background: var(--card-bg); backdrop-filter: blur(15px); border-radius: 15px; border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 15px; overflow: hidden; box-shadow: 0 5px 25px rgba(0,0,0,0.6); }
+        
+        .acc-wrapper { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+        .section.active .acc-wrapper { grid-template-rows: 1fr; }
+
+        .acc-header { padding: 18px 25px; background: rgba(255,255,255,0.03); cursor: pointer; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; color: var(--accent); font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem; }
+        .acc-header::after { content: '▼'; font-size: 0.7rem; transition: 0.4s; opacity: 0.5; }
+        .section.active .acc-header::after { transform: rotate(180deg); }
+
+        .acc-content { overflow: hidden; }
+        .inner-padding { padding: 20px; border-top: 1px solid rgba(255,255,255,0.05); }
+
+        .sub-label { font-size: 0.65rem; color: #888; text-transform: uppercase; margin: 15px 0 10px 0; letter-spacing: 1px; display: block; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 3px; }
+        .sub-label:first-child { margin-top: 0; }
+
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+
+        .card { background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.3s ease; display: flex; flex-direction: column; align-items: center; position: relative; overflow: hidden; }
+        .card:hover { transform: translateY(-3px); background: rgba(183, 148, 255, 0.1); border-color: var(--accent); }
+        .card img { width: 42px; height: 42px; margin-bottom: 8px; transition: 0.3s; pointer-events: none; }
+        .card span { font-size: 0.75rem; pointer-events: none; }
+        .card.active { border-color: var(--accent); background: rgba(183, 148, 255, 0.2); box-shadow: 0 0 15px rgba(183,148,255,0.2); }
+
+        .result-box { background: rgba(0,0,0,0.7); padding: 25px; border-radius: 20px; text-align: center; border: 1px solid rgba(183, 148, 255, 0.3); }
+        .res-val { font-size: 2.2rem; font-weight: bold; color: var(--accent); display: block; margin: 5px 0; }
+        .sulfur-color { color: var(--sulfur); text-shadow: 0 0 10px rgba(241, 196, 15, 0.3); }
+        
+        @media (max-width: 768px) { .main-layout { flex-direction: column; } .right-col { width: 100%; position: static; } }
+    </style>
+</head>
+<body>
+
+<div id="snow-container"></div>
+
+<div class="container">
+    <h1>RAID HELPER</h1>
+
+    <div class="main-layout">
+        <div class="left-col">
+            <div class="section active">
+                <div class="acc-header" onclick="toggleAcc(this)">Стены</div>
+                <div class="acc-wrapper"><div class="acc-content"><div class="inner-padding"><div class="grid">
+                    <div class="card" data-id="wood_w" onclick="selectTarget(this)"><img src="materials/woodwall.png"><span>Деревянная стена</span></div>
+                    <div class="card active" data-id="stone_w" onclick="selectTarget(this)"><img src="materials/stonewall.png"><span>Каменная стена</span></div>
+                    <div class="card" data-id="metal_w" onclick="selectTarget(this)"><img src="materials/metalwall.png"><span>Металлическа стена</span></div>
+                    <div class="card" data-id="mvk_w" onclick="selectTarget(this)"><img src="materials/mvkwall.png"><span>МВК стена</span></div>
+                </div></div></div></div>
+            </div>
+
+            <div class="section">
+                <div class="acc-header" onclick="toggleAcc(this)">Двери</div>
+                <div class="acc-wrapper"><div class="acc-content"><div class="inner-padding"><div class="grid">
+                    <div class="card" data-id="wood_d" onclick="selectTarget(this)"><img src="materials/wooddoor.png"><span>Деревянная дверь</span></div>
+                    <div class="card" data-id="metal_d" onclick="selectTarget(this)"><img src="materials/metaldoor.png"><span>Дверь из листового металла</span></div>
+                    <div class="card" data-id="garage_d" onclick="selectTarget(this)"><img src="materials/garagedoor.png"><span>Гаражная дверь</span></div>
+                    <div class="card" data-id="mvk_d" onclick="selectTarget(this)"><img src="materials/mvkdoor.png"><span>МВК дверь</span></div>
+                </div></div></div></div>
+            </div>
+
+            <div class="section">
+                <div class="acc-header" onclick="toggleAcc(this)">Конструкции</div>
+                <div class="acc-wrapper"><div class="acc-content"><div class="inner-padding">
+                    <span class="sub-label">Защита и Внешние стены</span>
+                    <div class="grid">
+                        <div class="card" data-id="turret" onclick="selectTarget(this)"><img src="materials/turret.png"><span>Турель</span></div>
+                        <div class="card" data-id="high_wood" onclick="selectTarget(this)"><img src="materials/highwoodwall.png"><span>Деревянная высокая стена</span></div>
+                        <div class="card" data-id="high_stone" onclick="selectTarget(this)"><img src="materials/highstonewall.png"><span>Каменная высокая стена</span></div>
+                    </div>
+                    <span class="sub-label">Оконные решётки</span>
+                    <div class="grid">
+                        <div class="card" data-id="grate_wood" onclick="selectTarget(this)"><img src="materials/woodgrate.png"><span>Деревянные решетки</span></div>
+                        <div class="card" data-id="grate_metal" onclick="selectTarget(this)"><img src="materials/metalgrate.png"><span>Металлические оконные решётки</span></div>
+                        <div class="card" data-id="grate_mvk" onclick="selectTarget(this)"><img src="materials/mvkgrate.png"><span>Укреплённое стеклянное окно</span></div>
+                        <div class="card" data-id="glass_mvk" onclick="selectTarget(this)"><img src="materials/reinforcedglass.png"><span>Усиленное стеклянное окно</span></div>
+                    </div>
+                </div></div></div>
+            </div>
+        </div>
+
+        <div class="right-col">
+            <div class="section active">
+                <div class="acc-header">Взрывчатка</div>
+                <div class="inner-padding">
+                    <div class="grid" id="tools">
+                        <div class="card" data-tool="satchel" data-sulfur="480" onclick="selectTool(this)">
+                            <img src="materials/satchel.png">
+                            <span>Сачель</span>
+                        </div>
+                        <div class="card active" data-tool="c4" data-sulfur="2200" onclick="selectTool(this)">
+                            <img src="materials/c4.png">
+                            <span>C4</span>
+                        </div>
+                        <div class="card" data-tool="rocket" data-sulfur="1400" onclick="selectTool(this)">
+                            <img src="materials/rocket.png">
+                            <span>Ракета</span>
+                        </div>
+                        <div class="card" data-tool="explosive" data-sulfur="25" onclick="selectTool(this)">
+                            <img src="materials/explosive.png">
+                            <span>Разрывные патроны</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="result-box">
+                <span style="font-size: 0.65rem; color: #aaa; text-transform: uppercase;">Необходимо</span>
+                <div id="count-out" class="res-val">2</div>
+                <div style="margin-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
+                    <span style="font-size: 0.65rem; color: #aaa; text-transform: uppercase;">Серы всего</span>
+                    <div id="sulfur-out" class="res-val sulfur-color">4,400</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- НАЧАЛО БЛОКА ПОДДЕРЖКИ -->
+<div style="
+    max-width: 600px;
+    margin: 40px auto 20px auto;
+    padding: 20px 25px;
+    background: rgba(20, 15, 35, 0.9);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(183, 148, 255, 0.3);
+    border-radius: 20px;
+    text-align: center;
+    z-index: 10;
+    position: relative;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+">
+    <h3 style="
+        color: #b794ff;
+        margin-bottom: 12px;
+        font-size: 22px;
+        font-weight: bold;
+        letter-spacing: 1px;
+    ">❤️ Поддержать автора</h3>
+    
+    <p style="
+        color: #f0f0f0;
+        margin-bottom: 20px;
+        font-size: 15px;
+        line-height: 1.4;
+    ">
+        Если мой калькулятор помогает вам в рейдах —<br> 
+        вы можете поддержать проект.
+    </p>
+    
+    <div style="
+        background: #0a081a;
+        padding: 14px;
+        border-radius: 14px;
+        border: 1px solid #b794ff;
+        display: inline-block;
+        width: auto;
+        min-width: 260px;
+    ">
+        <!-- 🔻 ЗДЕСЬ ЗАМЕНИТЕ НОМЕР КАРТЫ НА СВОЙ 🔻 -->
+        <span style="
+            color: #f1c40f;
+            font-size: 20px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        ">💳 2200 7020 5433 4870</span>
+        <!-- 🔺 КОНЕЦ ЗАМЕНЫ 🔺 -->
+        <p style="
+            color: #aaa;
+            font-size: 11px;
+            margin-top: 8px;
+            margin-bottom: 0;
+        ">Т-Банк</p>
+    </div>
+    
+    <p style="
+        color: #7f8c8d;
+        font-size: 12px;
+        margin-top: 18px;
+        margin-bottom: 0;
+    ">
+        Спасибо, что пользуетесь моим инструментом!
+        Контакт: tema350t@gmail.com
+    </p>
+</div>
+<!-- КОНЕЦ БЛОКА ПОДДЕРЖКИ -->
+
+<script>
+    // Данные по Magic Rust (Стены, Двери, Конструкции)
+    const raidData = {
+        wood_w: { satchel: 3, c4: 1, rocket: 2, explosive: 50 },
+        stone_w: { satchel: 10, c4: 2, rocket: 4, explosive: 186 },
+        metal_w: { satchel: 23, c4: 4, rocket: 8, explosive: 400 },
+        mvk_w: { satchel: 46, c4: 8, rocket: 15, explosive: 800 },
+        
+        wood_d: { satchel: 2, c4: 1, rocket: 1, explosive: 20 },
+        metal_d: { satchel: 4, c4: 1, rocket: 2, explosive: 63 },
+        garage_d: { satchel: 9, c4: 2, rocket: 3, explosive: 150 },
+        mvk_d: { satchel: 12, c4: 2, rocket: 4, explosive: 200 },
+        
+        turret: { satchel: 2, c4: 1, rocket: 3, explosive: 200 },
+        high_wood: { satchel: 6, c4: 2, rocket: 3, explosive: 100 },
+        high_stone: { satchel: 10, c4: 2, rocket: 4, explosive: 185 },
+        
+        grate_wood: { satchel: 3, c4: 1, rocket: 2, explosive: 50 },
+        grate_metal: { satchel: 12, c4: 2, rocket: 3, explosive: 140 },
+        grate_mvk: { satchel: 12, c4: 2, rocket: 4, explosive: 200 },
+        glass_mvk: { satchel: 12, c4: 2, rocket: 4, explosive: 200 }
+    };
+
+    let selectedTargetId = 'stone_w', selectedTool = 'c4', sulfurPrice = 2200;
+
+    function createRipple(event) {
+        const button = event.currentTarget;
+        const circle = document.createElement("span");
+        const diameter = Math.max(button.clientWidth, button.clientHeight);
+        circle.style.width = circle.style.height = `${diameter}px`;
+        circle.style.left = `${event.clientX - button.getBoundingClientRect().left - diameter/2}px`;
+        circle.style.top = `${event.clientY - button.getBoundingClientRect().top - diameter/2}px`;
+        circle.classList.add("ripple");
+        const prev = button.getElementsByClassName("ripple")[0];
+        if (prev) prev.remove();
+        button.appendChild(circle);
+    }
+
+    function toggleAcc(header) {
+        createRipple(event);
+        header.parentElement.classList.toggle('active');
+    }
+
+    function selectTarget(el) {
+        createRipple(event);
+        document.querySelectorAll('.left-col .card').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedTargetId = el.dataset.id;
+        calculate();
+    }
+
+    function selectTool(el) {
+        createRipple(event);
+        document.querySelectorAll('#tools .card').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        selectedTool = el.dataset.tool;
+        sulfurPrice = parseInt(el.dataset.sulfur);
+        calculate();
+    }
+
+    function calculate() {
+        const count = raidData[selectedTargetId][selectedTool];
+        document.getElementById('count-out').innerText = count.toLocaleString();
+        document.getElementById('sulfur-out').innerText = (count * sulfurPrice).toLocaleString();
+    }
+
+    document.addEventListener('mousemove', e => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 120;
+        document.documentElement.style.setProperty('--mouse-wind', x + 'px');
+    });
+    setInterval(() => {
+        const p = document.createElement('div');
+        p.className = 'snow-particle';
+        const s = Math.random() * 3 + 1 + 'px';
+        p.style.width = s; p.style.height = s; p.style.left = Math.random() * 100 + 'vw';
+        const d = Math.random() * 2 + 3; p.style.animationDuration = d + 's';
+        document.getElementById('snow-container').appendChild(p);
+        setTimeout(() => p.remove(), d * 1000);
+    }, 40);
+</script>
+</body>
+</html>
